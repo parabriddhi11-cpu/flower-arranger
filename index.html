@@ -1,0 +1,517 @@
+<!-- Save as index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flower Arranger — Final</title>
+  <style>
+    :root{--bg:#fbf8ff;--panel:#fff;--muted:#6b6b7a;--accent:#ff6b6b}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial}
+    body{background:linear-gradient(180deg,#fbf8ff,#f3f7ff);display:flex;gap:12px;padding:12px;box-sizing:border-box}
+    .left{width:260px;display:flex;flex-direction:column;gap:12px}
+    .card{background:var(--panel);border-radius:12px;padding:12px;box-shadow:0 8px 28px rgba(10,10,30,0.06)}
+    h2{margin:0;font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+    .toolbar{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding-right:4px}
+    .item-btn{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;border:1px solid rgba(20,20,50,0.04);cursor:pointer;background:#fff}
+    .item-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(20,20,50,0.04)}
+    .workspace-wrap{flex:1;display:flex;gap:12px}
+    .stage-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:620px;overflow:auto}
+    .stage{width:920px;height:640px;border-radius:12px;overflow:visible;background:linear-gradient(180deg,#fff,#fafcff);box-shadow:0 8px 28px rgba(10,10,30,0.05)}
+    svg{width:100%;height:100%;display:block}
+    .controls-panel{width:320px;display:flex;flex-direction:column;gap:12px;position:sticky;top:12px;align-self:flex-start}
+    .controls-row{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:var(--accent);color:white;border:0;padding:8px 10px;border-radius:8px;cursor:pointer}
+    button.ghost{background:transparent;color:var(--muted);border:1px solid rgba(200,210,255,0.5)}
+    input[type=color]{width:44px;height:36px;border:0;padding:0;background:transparent}
+    .selected-outline{stroke:#1e88e5;stroke-width:2;fill:none;stroke-dasharray:6 4}
+    .kbd{background:#f0f2ff;padding:2px 6px;border-radius:6px;font-family:monospace;font-size:12px}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+    @media (max-width:1100px){body{flex-direction:column} .left{width:100%} .controls-panel{position:relative;width:100%}}
+  </style>
+</head>
+<body>
+  <div class="left">
+    <div class="card">
+      <h2>Flower Arranger</h2>
+      <div class="muted" style="margin-top:6px">Cute SVG flowers & vases — drag, rotate, flip, scale, change colors, export PNG.</div>
+    </div>
+
+    <div class="card">
+      <strong>Flowers</strong>
+      <div class="toolbar" id="flowerList">
+        <div class="item-btn" data-template="rose"><div style="width:40px">🌹</div><div><strong>Rose</strong><div class="muted">Layered</div></div></div>
+        <div class="item-btn" data-template="peony"><div style="width:40px">🌸</div><div><strong>Peony</strong><div class="muted">Fluffy</div></div></div>
+        <div class="item-btn" data-template="tulip"><div style="width:40px">🌷</div><div><strong>Tulip</strong><div class="muted">Cup</div></div></div>
+        <div class="item-btn" data-template="sunflower"><div style="width:40px">🌻</div><div><strong>Sunflower</strong><div class="muted">Bold</div></div></div>
+        <div class="item-btn" data-template="ranunculus"><div style="width:40px">💮</div><div><strong>Ranunculus</strong><div class="muted">Delicate</div></div></div>
+        <div class="item-btn" data-template="daisy"><div style="width:40px">✿</div><div><strong>Daisy</strong><div class="muted">Playful</div></div></div>
+        <div class="item-btn" data-template="larkspur"><div style="width:40px">🌿</div><div><strong>Larkspur</strong><div class="muted">Tall stem</div></div></div>
+        <div class="item-btn" data-template="orchid"><div style="width:40px">🏵️</div><div><strong>Orchid</strong><div class="muted">Elegant</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Vases</strong>
+      <div class="toolbar" id="vaseList">
+        <div class="item-btn" data-vase="vase-simple"><div style="width:40px">🫙</div><div><strong>Jar</strong><div class="muted">Glass</div></div></div>
+        <div class="item-btn" data-vase="vase-tall"><div style="width:40px">🏺</div><div><strong>Tall</strong><div class="muted">Modern</div></div></div>
+        <div class="item-btn" data-vase="vase-bowl"><div style="width:40px">🍯</div><div><strong>Bowl</strong><div class="muted">Low</div></div></div>
+        <div class="item-btn" data-vase="vase-ceramic"><div style="width:40px">🖼️</div><div><strong>Ceramic</strong><div class="muted">Artisanal</div></div></div>
+        <div class="item-btn" data-vase="vase-modern"><div style="width:40px">🏵️</div><div><strong>Modern</strong><div class="muted">Minimal</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted">Tips</div>
+      <div style="height:6px"></div>
+      <div class="muted">Drag items, use arrow keys to nudge, select then use controls (right).</div>
+    </div>
+  </div>
+
+  <div class="workspace-wrap">
+    <div class="stage-wrap">
+      <div class="stage card">
+        <svg id="stage" viewBox="0 0 920 640" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="petalGrad" cx="30%" cy="30%"><stop offset="0%" stop-color="#fff" stop-opacity="0.6"/><stop offset="80%" stop-color="#ffd6e0"/></radialGradient>
+            <radialGradient id="centerGrad" cx="50%" cy="40%"><stop offset="0%" stop-color="#fff59a"/><stop offset="100%" stop-color="#f2b705"/></radialGradient>
+            <linearGradient id="glassGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity="0.8"/><stop offset="100%" stop-color="#cfeeff" stop-opacity="0.5"/></linearGradient>
+            <filter id="softShadow"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.12"/></filter>
+
+            <!-- TEMPLATES (flowers) -->
+            <!-- Rose -->
+            <g id="tmpl-rose"><g class="flower-root"><g class="flower-petals">
+              <ellipse rx="22" ry="14" cx="0" cy="0" />
+              <ellipse rx="20" ry="12" cx="6" cy="-6" transform="rotate(20)"/>
+              <ellipse rx="20" ry="12" cx="-6" cy="-6" transform="rotate(-20)"/>
+              <ellipse rx="16" ry="10" cx="0" cy="-10"/>
+            </g><circle class="flower-center" cx="0" cy="6" r="6"/><rect x="-3" y="12" width="6" height="56" rx="3" class="flower-stem"/></g></g>
+
+            <!-- Peony -->
+            <g id="tmpl-peony"><g class="flower-root"><g class="flower-petals">
+              <path d="M0 -18 C14 -24 28 -24 40 -12 C26 -4 22 6 6 12 C-8 6 -10 -4 0 -18"/>
+              <path d="M0 -12 C10 -18 20 -18 30 -8 C20 -2 16 6 6 10 C-4 6 -6 -2 0 -12" transform="rotate(20)"/>
+              <path d="M0 -12 C10 -18 20 -18 30 -8 C20 -2 16 6 6 10 C-4 6 -6 -2 0 -12" transform="rotate(-20)"/>
+            </g><circle class="flower-center" cx="0" cy="10" r="5"/><rect x="-4" y="14" width="8" height="52" rx="4" class="flower-stem"/></g></g>
+
+            <!-- Tulip -->
+            <g id="tmpl-tulip"><g class="flower-root"><g class="flower-petals">
+              <path d="M0 -24 C18 -30 34 -12 26 6 C16 26 -16 26 -26 6 C-34 -12 -18 -30 0 -24"/>
+            </g><rect x="-5" y="4" width="10" height="64" rx="5" class="flower-stem"/></g></g>
+
+            <!-- Sunflower -->
+            <g id="tmpl-sunflower"><g class="flower-root"><g class="flower-petals">
+              <g id="sfpet"><ellipse rx="8" ry="28" cx="0" cy="-16"/></g>
+              <!-- many petals via use -->
+              <use href="#sfpet" transform="rotate(0)"/>
+              <use href="#sfpet" transform="rotate(22)"/>
+              <use href="#sfpet" transform="rotate(44)"/>
+              <use href="#sfpet" transform="rotate(66)"/>
+              <use href="#sfpet" transform="rotate(88)"/>
+              <use href="#sfpet" transform="rotate(110)"/>
+              <use href="#sfpet" transform="rotate(132)"/>
+              <use href="#sfpet" transform="rotate(154)"/>
+              <use href="#sfpet" transform="rotate(176)"/>
+              <use href="#sfpet" transform="rotate(198)"/>
+              <use href="#sfpet" transform="rotate(220)"/>
+              <use href="#sfpet" transform="rotate(242)"/>
+              <use href="#sfpet" transform="rotate(264)"/>
+              <use href="#sfpet" transform="rotate(286)"/>
+              <use href="#sfpet" transform="rotate(308)"/>
+              <use href="#sfpet" transform="rotate(330)"/>
+            </g><circle class="flower-center" cx="0" cy="4" r="18"/><rect x="-4" y="20" width="8" height="60" rx="4" class="flower-stem"/></g></g>
+
+            <!-- Ranunculus -->
+            <g id="tmpl-ranunculus"><g class="flower-root"><g class="flower-petals">
+              <circle r="18"/>
+              <ellipse rx="14" ry="8" cx="0" cy="-6"/>
+              <ellipse rx="12" ry="6" cx="4" cy="-4" transform="rotate(25)"/>
+            </g><rect x="-3" y="20" width="6" height="50" rx="3" class="flower-stem"/></g></g>
+
+            <!-- Daisy -->
+            <g id="tmpl-daisy"><g class="flower-root"><g class="flower-petals">
+              <g id="dpet"><ellipse rx="6" ry="14" cx="0" cy="-16"/></g>
+              <use href="#dpet" transform="rotate(0)"/><use href="#dpet" transform="rotate(30)"/><use href="#dpet" transform="rotate(60)"/><use href="#dpet" transform="rotate(90)"/><use href="#dpet" transform="rotate(120)"/><use href="#dpet" transform="rotate(150)"/><use href="#dpet" transform="rotate(180)"/><use href="#dpet" transform="rotate(210)"/><use href="#dpet" transform="rotate(240)"/><use href="#dpet" transform="rotate(270)"/><use href="#dpet" transform="rotate(300)"/><use href="#dpet" transform="rotate(330)"/>
+            </g><circle class="flower-center" cx="0" cy="4" r="7"/><rect x="-3" y="20" width="6" height="54" rx="3" class="flower-stem"/></g></g>
+
+            <!-- Orchid (simple) -->
+            <g id="tmpl-orchid"><g class="flower-root"><g class="flower-petals">
+              <path d="M0 -16 C12 -26 28 -26 36 -14 C20 -6 8 2 0 6 C-10 2 -18 -4 0 -16"/>
+            </g><rect x="-3" y="12" width="6" height="56" rx="3" class="flower-stem"/></g></g>
+
+            <!-- Larkspur -->
+            <g id="tmpl-larkspur"><g class="flower-root"><g class="flower-petals">
+              <g transform="translate(0,-6)"><ellipse rx="8" ry="5" cx="0" cy="-8"/><ellipse rx="7" ry="5" cx="0" cy="-2"/><ellipse rx="6" ry="4" cx="0" cy="4"/></g>
+            </g><rect x="-2" y="6" width="4" height="72" rx="2" class="flower-stem"/></g></g>
+
+            <!-- VASES -->
+            <g id="vase-simple"><g class="vase-root" filter="url(#softShadow)"><ellipse cx="0" cy="46" rx="46" ry="10" fill="rgba(0,0,0,0.06)"/><path d="M-30 10 C-30 30 -20 44 -0 44 C20 44 30 30 30 10 C30 -6 -30 -6 -30 10 Z" fill="url(#glassGrad)" stroke="#dbeeff" stroke-width="1"/></g></g>
+
+            <g id="vase-tall"><g class="vase-root" filter="url(#softShadow)"><ellipse cx="0" cy="56" rx="36" ry="6" fill="rgba(0,0,0,0.06)"/><path d="M-18 0 C-24 30 -10 48 0 48 C10 48 24 30 18 0 C18 -6 -18 -6 -18 0 Z" fill="#fff5f2" stroke="#f0e3e0" stroke-width="1"/></g></g>
+
+            <g id="vase-bowl"><g class="vase-root" filter="url(#softShadow)"><ellipse cx="0" cy="56" rx="54" ry="10" fill="rgba(0,0,0,0.06)"/><path d="M-44 20 C-30 48 -6 56 0 56 C6 56 30 48 44 20 C10 36 -10 36 -44 20 Z" fill="#fff7e6" stroke="#fbf0d9" stroke-width="1"/></g></g>
+
+            <g id="vase-ceramic"><g class="vase-root" filter="url(#softShadow)"><ellipse cx="0" cy="56" rx="40" ry="8" fill="rgba(0,0,0,0.06)"/><path d="M-28 6 C-40 20 -18 56 0 56 C18 56 40 20 28 6 C28 -6 -28 -6 -28 6 Z" fill="#fff8ff" stroke="#efe6ff" stroke-width="1"/></g></g>
+
+            <g id="vase-modern"><g class="vase-root" filter="url(#softShadow)"><ellipse cx="0" cy="60" rx="30" ry="6" fill="rgba(0,0,0,0.05)"/><path d="M-22 8 C-18 36 -6 56 0 56 C6 56 18 36 22 8 C22 -6 -22 -6 -22 8 Z" fill="#eef6ff" stroke="#dbeeff" stroke-width="1"/></g></g>
+
+          </defs>
+
+          <rect x="0" y="0" width="920" height="640" fill="transparent"/>
+          <g id="vases" transform="translate(460,380)"></g>
+          <g id="arrangement" transform="translate(460,220)"></g>
+          <g id="ui-layer"></g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="card">
+        <strong>Edit selected</strong>
+        <div style="height:8px"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="muted">Petal</label><input id="petalColor" type="color" value="#ff6b6b" />
+          <label class="muted">Vase</label><input id="vaseColor" type="color" value="#e8f6ff" />
+        </div>
+        <div style="height:10px"></div>
+        <div class="controls-row">
+          <button id="rotateLeft" class="ghost">⟲ -15°</button>
+          <button id="rotateRight" class="ghost">⟳ +15°</button>
+          <button id="tiltLeft" class="ghost">↶ Tilt</button>
+          <button id="tiltRight" class="ghost">↷ Tilt</button>
+          <button id="flipH" class="ghost">⇋ Flip H</button>
+          <button id="flipV" class="ghost">⇵ Flip V</button>
+          <button id="scaleUp" class="ghost">＋</button>
+          <button id="scaleDown" class="ghost">－</button>
+        </div>
+        <div style="height:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="bringForward" class="ghost">▲ Z</button>
+          <button id="sendBack" class="ghost">▼ Z</button>
+          <button id="deleteItem" class="ghost">🗑 Delete</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>Actions</strong>
+        <div style="height:8px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="undo">Undo</button>
+          <button id="clear" class="ghost">Clear</button>
+          <button id="export" style="background:#2b6cb0">Export PNG</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="muted">Shortcuts: <span class="kbd">←↑→↓</span> nudge • <span class="kbd">Del</span> remove • Double-click to bring forward</div>
+      </div>
+
+      <div class="card">
+        <strong>Selected:</strong> <div id="selectedName" style="margin-top:8px">None</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ---------- App state ---------- */
+const stage = document.getElementById('stage');
+const arrangement = document.getElementById('arrangement');
+const vases = document.getElementById('vases');
+const uiLayer = document.getElementById('ui-layer');
+const petalColor = document.getElementById('petalColor');
+const vaseColor = document.getElementById('vaseColor');
+const selectedName = document.getElementById('selectedName');
+
+let selected = null;
+let history = [];
+function pushHistory(){ history.push({arr: arrangement.innerHTML, v: vases.innerHTML}); if(history.length>60) history.shift(); }
+
+/* ---------- Helpers ---------- */
+function parseTransform(node){
+  const t = (node && node.getAttribute) ? node.getAttribute('transform') || '' : '';
+  const txm = t.match(/translate\(([-0-9.]+),?\s*([-0-9.]+)\)/)||[];
+  const tx = Number(txm[1]||0), ty = Number(txm[2]||0);
+  const scMatch = t.match(/scale\(\s*([-0-9.]+)(?:\s*,\s*([-0-9.]+))?\s*\)/)||[];
+  const sx = Number(scMatch[1]||1), sy = (typeof scMatch[2] !== 'undefined' && scMatch[2] !== '') ? Number(scMatch[2]) : sx;
+  const rot = Number((t.match(/rotate\(([-0-9.]+)\)/)||[])[1]||0);
+  const skx = Number((t.match(/skewX\(([-0-9.]+)\)/)||[])[1]||0);
+  const sky = Number((t.match(/skewY\(([-0-9.]+)\)/)||[])[1]||0);
+  return {tx,ty,sx,sy,rot,skx,sky};
+}
+function buildTransform(o){
+  const tx = Number(o.tx||0), ty=Number(o.ty||0), rot=Number(o.rot||0);
+  const skx=Number(o.skx||0), sky=Number(o.sky||0); const sx=(typeof o.sx!=='undefined')?Number(o.sx):1; const sy=(typeof o.sy!=='undefined')?Number(o.sy):sx;
+  return `translate(${tx},${ty}) rotate(${rot}) skewX(${skx}) skewY(${sky}) scale(${sx},${sy})`;
+}
+
+/* Convert <use> inside a cloned template into real nodes (so fills can be set) */
+function resolveUses(clone){
+  clone.querySelectorAll('use').forEach(u=>{
+    const href = u.getAttribute('href') || u.getAttribute('xlink:href');
+    if(!href) return;
+    // href like "#dpet"
+    const ref = document.querySelector(href);
+    if(!ref) return;
+    const newNode = ref.cloneNode(true);
+    // preserve transforms from use (and from parent)
+    const tr = u.getAttribute('transform');
+    if(tr) newNode.setAttribute('transform', tr);
+    u.parentNode.replaceChild(newNode, u);
+  });
+}
+
+/* Apply fill color to all petal shapes inside group */
+function applyPetalColorToGroup(group, color){
+  if(!group) return;
+  group.querySelectorAll('.flower-petals path, .flower-petals ellipse, .flower-petals circle, .flower-petals g ellipse').forEach(el=>{
+    el.setAttribute('fill', color);
+    el.style.fill = color;
+  });
+}
+
+/* Apply vase color */
+function applyVaseColorToGroup(group, color){
+  if(!group) return;
+  group.querySelectorAll('path, ellipse').forEach(el=>{
+    // ignore shadows (small opacity ellipses) by checking stroke maybe; keep simple: don't recolor shadows (they have low opacity)
+    const opacity = parseFloat(el.getAttribute('fill-opacity') || el.style.opacity || 1);
+    if(opacity < 0.2) return;
+    el.setAttribute('fill', color);
+    el.style.fill = color;
+  });
+}
+
+/* ---------- Add items ---------- */
+document.querySelectorAll('[data-template]').forEach(btn=> btn.addEventListener('click', ()=> addFlower(btn.dataset.template)));
+document.querySelectorAll('[data-vase]').forEach(btn=> btn.addEventListener('click', ()=> addVase(btn.dataset.vase)));
+
+function addFlower(name){
+  pushHistory();
+  const tmpl = document.getElementById('tmpl-'+name);
+  if(!tmpl) { alert('template missing: '+name); return; }
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.classList.add('arr-item');
+  g.setAttribute('data-type', name);
+  // default transform near center
+  const x = (Math.random()-0.5) * 160;
+  const y = (Math.random()-0.5) * 80;
+  g.setAttribute('transform', `translate(${x},${y}) rotate(${(Math.random()*40)-20}) scale(1,1) skewX(0) skewY(0)`);
+  const clone = tmpl.cloneNode(true);
+  // resolve <use> elements within clone so we can color them
+  resolveUses(clone);
+  // color petals with current petalColor value
+  applyPetalColorToGroup(clone, petalColor.value);
+  g.appendChild(clone);
+  arrangement.appendChild(g);
+  makeDraggable(g);
+  selectItem(g);
+}
+
+function addVase(name){
+  pushHistory();
+  const tmpl = document.getElementById(name);
+  if(!tmpl) { alert('vase missing: '+name); return; }
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.classList.add('vase-item');
+  g.setAttribute('data-type', name);
+  // random x offset
+  const x = (Math.random()-0.5)*140;
+  g.setAttribute('transform', `translate(${x},0) scale(1,1)`);
+  const clone = tmpl.cloneNode(true);
+  applyVaseColorToGroup(clone, vaseColor.value);
+  g.appendChild(clone);
+  vases.appendChild(g);
+  makeDraggable(g);
+  selectItem(g);
+}
+
+/* ---------- Drag / select (robust) ---------- */
+function makeDraggable(el){
+  let isDown=false, startX=0, startY=0, origTx=0, origTy=0;
+  function ptFromEvent(e){
+    const pt = stage.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const ctm = stage.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+  el.addEventListener('pointerdown', e=>{
+    e.stopPropagation();
+    el.setPointerCapture(e.pointerId);
+    isDown = true;
+    const p = ptFromEvent(e);
+    const t = parseTransform(el);
+    startX = p.x; startY = p.y; origTx = t.tx; origTy = t.ty;
+    selectItem(el);
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!isDown) return;
+    e.preventDefault();
+    const p = ptFromEvent(e);
+    const dx = p.x - startX, dy = p.y - startY;
+    const t = parseTransform(el);
+    const newX = origTx + dx, newY = origTy + dy;
+    el.setAttribute('transform', buildTransform({tx:newX,ty:newY,rot:t.rot,skx:t.skx,sky:t.sky,sx:t.sx,sy:t.sy}));
+    renderSelection();
+  });
+  el.addEventListener('pointerup', e=>{ isDown=false; try{el.releasePointerCapture(e.pointerId)}catch(_){ } pushHistory(); });
+  el.addEventListener('pointercancel', ()=> isDown=false );
+}
+
+/* Select when clicking anywhere inside shapes (bubble up to arr-item / vase-item) */
+stage.addEventListener('pointerdown', e=>{
+  // find ancestor arr-item / vase-item
+  let node = e.target;
+  while(node && node !== stage){
+    if(node.classList && (node.classList.contains('arr-item') || node.classList.contains('vase-item')) ){
+      selectItem(node);
+      return;
+    }
+    node = node.parentNode;
+  }
+  // clicked empty area -> deselect
+  selectItem(null);
+});
+
+/* selection visuals */
+function renderSelection(){
+  uiLayer.innerHTML = '';
+  if(!selected) return;
+  const bbox = selected.getBBox();
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x', bbox.x - 8); rect.setAttribute('y', bbox.y - 8);
+  rect.setAttribute('width', bbox.width + 16); rect.setAttribute('height', bbox.height + 16);
+  rect.setAttribute('class','selected-outline');
+  const wrapper = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const t = selected.getAttribute('transform')||'';
+  wrapper.setAttribute('transform', t);
+  wrapper.appendChild(rect);
+  uiLayer.appendChild(wrapper);
+}
+
+function selectItem(el){
+  selected = el;
+  selectedName.textContent = el ? el.getAttribute('data-type') : 'None';
+  renderSelection();
+  // update color pickers to reflect selection
+  if(el){
+    if(el.classList.contains('arr-item')){
+      // look for any petal element
+      const pet = el.querySelector('.flower-petals path, .flower-petals ellipse, .flower-petals circle');
+      if(pet) petalColor.value = toHex(pet.getAttribute('fill') || pet.style.fill || petalColor.value);
+    }
+    if(el.classList.contains('vase-item')){
+      const vase = el.querySelector('path, ellipse');
+      if(vase) vaseColor.value = toHex(vase.getAttribute('fill') || vase.style.fill || vaseColor.value);
+    }
+  }
+}
+function toHex(col){
+  if(!col) return '#ff6b6b';
+  if(col.startsWith('#')) return col;
+  const m = col.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if(!m) return col;
+  return '#'+[1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+}
+
+/* ---------- Controls ---------- */
+// rotate / tilt / flip / scale
+document.getElementById('rotateLeft').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot-15,skx:t.skx,sky:t.sky,sx:t.sx,sy:t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('rotateRight').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot+15,skx:t.skx,sky:t.sky,sx:t.sx,sy:t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('tiltLeft').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx-8,sky:t.sky,sx:t.sx,sy:t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('tiltRight').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx+8,sky:t.sky,sx:t.sx,sy:t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('flipH').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx,sky:t.sky,sx:-t.sx,sy:t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('flipV').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx,sky:t.sky,sx:t.sx,sy:-t.sy})); renderSelection(); pushHistory(); });
+document.getElementById('scaleUp').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx,sky:t.sky,sx:(t.sx*1.12).toFixed(3),sy:(t.sy*1.12).toFixed(3)})); renderSelection(); pushHistory(); });
+document.getElementById('scaleDown').addEventListener('click', ()=>{ if(!selected) return; const t=parseTransform(selected); selected.setAttribute('transform', buildTransform({tx:t.tx,ty:t.ty,rot:t.rot,skx:t.skx,sky:t.sky,sx:(t.sx/1.12).toFixed(3),sy:(t.sy/1.12).toFixed(3)})); renderSelection(); pushHistory(); });
+
+// delete / bring forward / send back
+document.getElementById('deleteItem').addEventListener('click', deleteSelected);
+function deleteSelected(){ if(!selected) return; pushHistory(); selected.remove(); selected=null; renderSelection(); selectedName.textContent='None'; }
+
+document.getElementById('bringForward').addEventListener('click', ()=>{ if(!selected) return; arrangement.appendChild(selected); pushHistory(); });
+document.getElementById('sendBack').addEventListener('click', ()=>{ if(!selected) return; arrangement.insertBefore(selected, arrangement.firstChild); pushHistory(); });
+
+// petal color
+petalColor.addEventListener('input', e=>{
+  const c = e.target.value;
+  if(selected && selected.classList.contains('arr-item')){
+    // apply to the selected group
+    selected.querySelectorAll('.flower-petals path, .flower-petals ellipse, .flower-petals circle, .flower-petals g ellipse').forEach(el=>{
+      el.setAttribute('fill', c); el.style.fill = c;
+    });
+    // Also update petals within nested templates (defensive)
+    applyPetalColorToGroup(selected, c);
+    pushHistory();
+  }
+});
+
+// vase color
+vaseColor.addEventListener('input', e=>{
+  const c = e.target.value;
+  if(selected && selected.classList.contains('vase-item')){
+    applyVaseColorToGroup(selected, c);
+    pushHistory();
+  }
+});
+
+/* keyboard nudge and delete */
+window.addEventListener('keydown', e=>{
+  if(!selected) return;
+  const t = parseTransform(selected);
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+    e.preventDefault();
+    let dx=0,dy=0;
+    if(e.key==='ArrowLeft') dx=-6; if(e.key==='ArrowRight') dx=6; if(e.key==='ArrowUp') dy=-6; if(e.key==='ArrowDown') dy=6;
+    selected.setAttribute('transform', buildTransform({tx:t.tx+dx,ty:t.ty+dy,rot:t.rot,skx:t.skx,sky:t.sky,sx:t.sx,sy:t.sy}));
+    renderSelection(); pushHistory();
+  }
+  if(e.key === 'Delete'){ e.preventDefault(); deleteSelected(); }
+});
+
+/* Undo / Clear / Export */
+document.getElementById('undo').addEventListener('click', ()=>{
+  if(history.length===0) return;
+  history.pop(); const prev = history.pop();
+  if(!prev) return;
+  arrangement.innerHTML = prev.arr || '';
+  vases.innerHTML = prev.v || '';
+  arrangement.querySelectorAll('.arr-item').forEach(makeDraggable);
+  vases.querySelectorAll('.vase-item').forEach(makeDraggable);
+  selected = null; renderSelection();
+});
+document.getElementById('clear').addEventListener('click', ()=>{ pushHistory(); arrangement.innerHTML=''; vases.innerHTML=''; selected=null; renderSelection(); selectedName.textContent='None'; });
+
+document.getElementById('export').addEventListener('click', ()=>{
+  const clone = stage.cloneNode(true);
+  const cloneUi = clone.querySelector('#ui-layer'); if(cloneUi) cloneUi.remove();
+  clone.setAttribute('width', 920); clone.setAttribute('height', 640);
+  const s = new XMLSerializer().serializeToString(clone);
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+  const img = new Image();
+  img.onload = function(){
+    const c = document.createElement('canvas'); c.width=920; c.height=640; const ctx=c.getContext('2d');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0);
+    const png = c.toDataURL('image/png'); const a=document.createElement('a'); a.href=png; a.download='arrangement.png'; a.click();
+  }; img.src = url;
+});
+
+/* double-click: bring forward */
+stage.addEventListener('dblclick', e=>{
+  let node = e.target;
+  while(node && node !== stage){
+    if(node.classList && (node.classList.contains('arr-item')||node.classList.contains('vase-item'))){
+      arrangement.appendChild(node); pushHistory(); return;
+    }
+    node = node.parentNode;
+  }
+});
+
+/* ---------- initialize with sample bouquet ---------- */
+function seedDemo(){
+  addVase('vase-ceramic');
+  addFlower('peony'); addFlower('rose'); addFlower('daisy'); addFlower('sunflower');
+}
+seedDemo();
+</script>
+</body>
+</html>
